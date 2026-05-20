@@ -1,0 +1,13 @@
+{
+  "name": "maquina3-matchmaking",
+  "version": "1.0.0",
+  "description": "Microservicio gRPC de Matchmaking (algoritmos de asignación)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.0",
+    "@grpc/proto-loader": "^0.7.10"
+  }
+}

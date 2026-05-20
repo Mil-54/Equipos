@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package teamspace;
+
+// ============================================================
+// SERVICIO 1 — UserSpaceService (Máquina 1)
+// Maneja la creación de espacios y el registro de alumnos.
+// ============================================================
+service UserSpaceService {
+  // Docente crea un espacio nuevo
+  rpc CreateSpace (CreateSpaceRequest) returns (CreateSpaceResponse);
+
+  // Alumno solicita unirse a un espacio
+  rpc JoinSpace (JoinSpaceRequest) returns (JoinSpaceResponse);
+
+  // Obtiene la lista actual de alumnos en un espacio
+  rpc GetSpaceMembers (GetSpaceMembersRequest) returns (GetSpaceMembersResponse);
+
+  // Obtiene la configuración completa de un espacio
+  rpc GetSpaceConfig (GetSpaceConfigRequest) returns (GetSpaceConfigResponse);
+}
+
+// ============================================================
+// SERVICIO 2 — MatchmakingService (Máquina 3)
+// Algoritmos de agrupación puros, sin estado.
+// ============================================================
+service MatchmakingService {
+  // Recibe la lista de alumnos y retorna los equipos formados
+  rpc AssignTeams (AssignTeamsRequest) returns (AssignTeamsResponse);
+}
+
+// ============================================================
+// MENSAJES COMPARTIDOS
+// ============================================================
+
+message SpaceConfig {
+  string space_code    = 1; // Código único del espacio
+  int32  max_per_team  = 2; // Máximo de integrantes por equipo
+  string algorithm     = 3; // "RANDOM" | "ORDER"
+}
+
+message Student {
+  string student_id = 1; // ID del alumno
+  string name       = 2; // Nombre (puede ser igual al ID)
+  int64  joined_at  = 3; // Unix timestamp de registro
+}
+
+message Team {
+  int32    team_number = 1;    // Número de equipo (1-based)
+  repeated Student members = 2; // Integrantes del equipo
+}
+
+// ============================================================
+// MENSAJES: UserSpaceService
+// ============================================================
+
+message CreateSpaceRequest {
+  SpaceConfig config = 1;
+}
+
+message CreateSpaceResponse {
+  bool   success    = 1;
+  string message    = 2;
+  string space_code = 3; // Eco del código creado
+}
+
+message JoinSpaceRequest {
+  string space_code  = 1;
+  string student_id  = 2;
+  string student_name = 3;
+}
+
+message JoinSpaceResponse {
+  bool    success     = 1;
+  string  message     = 2;
+  Student student     = 3; // Datos del alumno registrado
+  int32   member_count = 4; // Total de alumnos en el espacio
+}
+
+message GetSpaceMembersRequest {
+  string space_code = 1;
+}
+
+message GetSpaceMembersResponse {
+  bool             success  = 1;
+  string           message  = 2;
+  repeated Student members  = 3;
+}
+
+message GetSpaceConfigRequest {
+  string space_code = 1;
+}
+
+message GetSpaceConfigResponse {
+  bool        success = 1;
+  string      message = 2;
+  SpaceConfig config  = 3;
+}
+
+// ============================================================
+// MENSAJES: MatchmakingService
+// ============================================================
+
+message AssignTeamsRequest {
+  repeated Student students    = 1; // Lista de alumnos a asignar
+  int32            max_per_team = 2; // Máximo de integrantes por equipo
+  string           algorithm   = 3; // "RANDOM" | "ORDER"
+}
+
+message AssignTeamsResponse {
+  bool           success       = 1;
+  string         message       = 2;
+  repeated Team  teams         = 3; // Equipos formados
+  int32          total_teams   = 4; // Cantidad de equipos
+  int32          total_students = 5; // Total de alumnos asignados
+}
