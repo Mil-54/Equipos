@@ -1,119 +1,167 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>TeamSpace — Asignación de Equipos en Tiempo Real</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TeamSpace</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
-  :root{
-    --bg:#0d0f18;--surface:#151824;--card:#1c2035;--border:#2a2f4a;
-    --accent:#6c63ff;--accent2:#ff6584;--green:#22d3a5;--yellow:#f9c846;
-    --text:#e8eaf6;--muted:#7b82a8;
-    --radius:14px;--transition:0.28s cubic-bezier(.4,0,.2,1);
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;}
+:root{
+  --bg:#07090f;--s1:#0e1120;--s2:#141728;--card:rgba(255,255,255,.04);
+  --border:rgba(255,255,255,.08);--a:#7c6fff;--a2:#ff6b9d;--a3:#06d6a0;
+  --text:#eef0ff;--muted:#6b7280;--r:16px;--ease:.3s cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(124,111,255,.18),transparent),
+  radial-gradient(ellipse 60% 40% at 80% 80%,rgba(255,107,157,.1),transparent);}
 
-  /* NAV */
-  nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;height:60px;gap:1rem;}
-  nav .logo{font-size:1.2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  nav .tabs{display:flex;gap:.25rem;margin-left:auto;}
-  .tab-btn{background:transparent;border:1px solid transparent;color:var(--muted);padding:.45rem 1.1rem;border-radius:8px;cursor:pointer;font-size:.875rem;font-weight:500;transition:var(--transition);}
-  .tab-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-  .tab-btn:hover:not(.active){border-color:var(--border);color:var(--text);}
+/* ── NAV ── */
+nav{height:64px;display:flex;align-items:center;padding:0 2rem;gap:1rem;
+  background:rgba(14,17,32,.8);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.logo{font-size:1.15rem;font-weight:900;letter-spacing:-.02em;
+  background:linear-gradient(135deg,var(--a),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.tabs{display:flex;gap:.3rem;background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:.3rem;}
+.tab-btn{background:none;border:none;color:var(--muted);padding:.4rem 1.1rem;border-radius:9px;
+  cursor:pointer;font:.6rem/.9 'Inter',sans-serif;font-size:.8rem;font-weight:600;transition:var(--ease);}
+.tab-btn.active{background:linear-gradient(135deg,var(--a),#a78bfa);color:#fff;box-shadow:0 2px 12px rgba(124,111,255,.4);}
+.nav-right{display:flex;align-items:center;gap:.75rem;margin-left:auto;}
+.ws-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:.4s;flex-shrink:0;}
+.ws-dot.on{background:var(--a3);box-shadow:0 0 8px var(--a3);}
+.ws-dot.err{background:var(--a2);}
+#ws-lbl{font-size:.75rem;color:var(--muted);}
+.gear-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--card);
+  color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;
+  transition:var(--ease);}
+.gear-btn:hover{color:var(--text);border-color:var(--a);}
 
-  /* WS STATUS */
-  .ws-status{display:flex;align-items:center;gap:.5rem;font-size:.78rem;margin-left:1.5rem;}
-  .ws-dot{width:9px;height:9px;border-radius:50%;background:#444;transition:background .4s;}
-  .ws-dot.connected{background:var(--green);box-shadow:0 0 6px var(--green);}
-  .ws-dot.error{background:var(--accent2);}
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
+.modal-bg.open{opacity:1;pointer-events:all;}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:1.75rem;width:360px;
+  transform:translateY(16px) scale(.97);transition:transform .25s;}
+.modal-bg.open .modal{transform:none;}
+.modal h3{font-size:.95rem;font-weight:700;margin-bottom:1.25rem;}
+.modal-close{float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;}
 
-  /* MAIN */
-  main{flex:1;padding:2rem;max-width:960px;margin:0 auto;width:100%;}
-  .view{display:none;animation:fadeIn .3s ease;}
-  .view.active{display:block;}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ── LAYOUT ── */
+main{max-width:980px;margin:0 auto;padding:2rem;width:100%;}
+.view{display:none;animation:fade .3s ease;}
+.view.active{display:block;}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-  /* CARD */
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;}
-  .card+.card{margin-top:1.25rem;}
-  .card-title{font-size:1rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.6rem;}
-  .card-title .icon{font-size:1.1rem;}
+/* ── HERO BANDS ── */
+.hero{border-radius:20px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden;}
+.hero-teacher{background:linear-gradient(135deg,rgba(124,111,255,.2),rgba(167,139,250,.1));
+  border:1px solid rgba(124,111,255,.25);}
+.hero-student{background:linear-gradient(135deg,rgba(255,107,157,.18),rgba(251,146,60,.1));
+  border:1px solid rgba(255,107,157,.25);}
+.hero h1{font-size:1.6rem;font-weight:900;letter-spacing:-.03em;margin-bottom:.3rem;}
+.hero p{color:var(--muted);font-size:.875rem;}
+.hero .orb{position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;
+  filter:blur(60px);opacity:.5;}
+.hero-teacher .orb{background:var(--a);}
+.hero-student .orb{background:var(--a2);}
 
-  /* FORM */
-  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;}
-  .field label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;}
-  .field input,.field select{width:100%;background:#111527;border:1px solid var(--border);border-radius:9px;padding:.65rem .9rem;color:var(--text);font-size:.9rem;font-family:inherit;transition:border-color .2s,box-shadow .2s;outline:none;}
-  .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,.18);}
-  .field select option{background:var(--card);}
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;
+  backdrop-filter:blur(12px);}
+.card+.card,.card+div,.hero+.card{margin-top:1.1rem;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.card-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:.5rem;}
 
-  /* BUTTON */
-  .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.4rem;border-radius:9px;border:none;cursor:pointer;font-weight:600;font-size:.875rem;font-family:inherit;transition:var(--transition);}
-  .btn-primary{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;}
-  .btn-primary:hover{opacity:.88;transform:translateY(-1px);}
-  .btn-danger{background:linear-gradient(135deg,var(--accent2),#e11d48);color:#fff;}
-  .btn-danger:hover{opacity:.88;transform:translateY(-1px);}
-  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;}
-  .btn-row{display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap;}
+/* ── FIELDS ── */
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.9rem;}
+label.lbl{display:block;font-size:.72rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;}
+input,select{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:10px;padding:.6rem .9rem;color:var(--text);font:.9rem 'Inter',sans-serif;
+  outline:none;transition:border-color .2s,box-shadow .2s;}
+input:focus,select:focus{border-color:var(--a);box-shadow:0 0 0 3px rgba(124,111,255,.2);}
+select option{background:var(--s2);}
 
-  /* ALERT */
-  .alert{border-radius:9px;padding:.75rem 1rem;font-size:.875rem;font-weight:500;margin-top:1rem;display:none;}
-  .alert.show{display:block;animation:fadeIn .25s ease;}
-  .alert-success{background:rgba(34,211,165,.12);border:1px solid rgba(34,211,165,.3);color:var(--green);}
-  .alert-error{background:rgba(255,101,132,.12);border:1px solid rgba(255,101,132,.3);color:var(--accent2);}
+/* ── ALGO TOGGLE ── */
+.algo{display:flex;gap:.4rem;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:10px;padding:.3rem;}
+.algo input{display:none;}
+.algo label{flex:1;text-align:center;padding:.38rem .6rem;border-radius:7px;cursor:pointer;
+  font-size:.78rem;font-weight:600;color:var(--muted);transition:var(--ease);}
+.algo input:checked+label{background:linear-gradient(135deg,var(--a),#a78bfa);color:#fff;}
 
-  /* MEMBERS LIST */
-  #teacher-members-list{display:flex;flex-wrap:wrap;gap:.6rem;min-height:48px;}
-  .member-chip{background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);color:var(--accent);border-radius:20px;padding:.3rem .85rem;font-size:.82rem;font-weight:600;animation:popIn .3s cubic-bezier(.34,1.56,.64,1);}
-  @keyframes popIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
-  .member-count-badge{background:var(--accent);color:#fff;border-radius:20px;padding:.15rem .65rem;font-size:.75rem;font-weight:700;margin-left:.5rem;}
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:.45rem;padding:.6rem 1.3rem;
+  border-radius:10px;border:none;cursor:pointer;font:.875rem/.9 'Inter',sans-serif;
+  font-weight:600;transition:var(--ease);}
+.btn-p{background:linear-gradient(135deg,var(--a),#a78bfa);color:#fff;box-shadow:0 4px 14px rgba(124,111,255,.35);}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(124,111,255,.45);}
+.btn-r{background:linear-gradient(135deg,#f43f5e,var(--a2));color:#fff;box-shadow:0 4px 14px rgba(244,63,94,.3);}
+.btn-r:hover{transform:translateY(-2px);}
+.btn-g{background:linear-gradient(135deg,#059669,var(--a3));color:#fff;box-shadow:0 4px 14px rgba(6,214,160,.3);}
+.btn-g:hover{transform:translateY(-2px);}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
+.btn-row{display:flex;gap:.6rem;margin-top:1.1rem;flex-wrap:wrap;}
 
-  /* TEAMS GRID */
-  .teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin-top:1rem;}
-  .team-card{background:#111527;border:1px solid var(--border);border-radius:12px;padding:1.1rem;position:relative;overflow:hidden;animation:popIn .35s cubic-bezier(.34,1.56,.64,1) both;}
-  .team-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
-  .team-num{font-size:.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;}
-  .team-member{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.05);}
-  .team-member:last-child{border-bottom:none;}
-  .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
-  .member-name{font-size:.83rem;font-weight:500;}
+/* ── ALERT ── */
+.alert{border-radius:10px;padding:.7rem 1rem;font-size:.83rem;font-weight:500;
+  margin-top:.9rem;display:none;}
+.alert.show{display:block;animation:fade .25s ease;}
+.ok{background:rgba(6,214,160,.1);border:1px solid rgba(6,214,160,.3);color:var(--a3);}
+.er{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:#fb7185;}
 
-  /* STUDENT VIEW — result panel */
-  #student-result{display:none;}
-  #student-result.show{display:block;animation:fadeIn .4s ease;}
-  .result-banner{text-align:center;padding:1.5rem;background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(255,101,132,.1));border-radius:var(--radius);margin-bottom:1rem;}
-  .result-team-num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  .result-label{font-size:.85rem;color:var(--muted);margin-top:.25rem;}
+/* ── CHIPS ── */
+#t-members{display:flex;flex-wrap:wrap;gap:.5rem;min-height:44px;}
+.chip{background:rgba(124,111,255,.12);border:1px solid rgba(124,111,255,.25);
+  color:var(--a);border-radius:20px;padding:.28rem .8rem;font-size:.78rem;font-weight:600;
+  animation:pop .3s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.badge{background:var(--a);color:#fff;border-radius:20px;padding:.1rem .6rem;
+  font-size:.72rem;font-weight:700;margin-left:.4rem;}
 
-  /* WAITING SPINNER */
-  .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:1.5rem auto;}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .waiting-msg{text-align:center;color:var(--muted);font-size:.9rem;}
+/* ── TEAMS GRID ── */
+.tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.9rem;margin-top:1rem;}
+.tc{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;
+  padding:1rem;position:relative;overflow:hidden;
+  animation:pop .4s cubic-bezier(.34,1.56,.64,1) both;}
+.tc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--a),var(--a2));}
+.tnum{font-size:.7rem;font-weight:800;color:var(--a);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:.7rem;}
+.tm{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;
+  border-bottom:1px solid rgba(255,255,255,.04);}
+.tm:last-child{border:none;}
+.av{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:.68rem;font-weight:800;
+  background:linear-gradient(135deg,var(--a),var(--a2));}
+.mn{font-size:.8rem;font-weight:500;}
 
-  /* ALGO SELECTOR */
-  .algo-pill{display:inline-flex;gap:.5rem;background:#111527;border:1px solid var(--border);border-radius:9px;padding:.3rem;}
-  .algo-pill label{padding:.35rem .85rem;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--muted);transition:var(--transition);}
-  .algo-pill input[type=radio]{display:none;}
-  .algo-pill input[type=radio]:checked+label{background:var(--accent);color:#fff;}
+/* ── STUDENT RESULT ── */
+.result-wrap{display:none;}
+.result-wrap.show{display:block;animation:fade .4s ease;}
+.rbanner{text-align:center;padding:2rem;background:linear-gradient(135deg,rgba(124,111,255,.12),rgba(255,107,157,.08));
+  border-radius:14px;margin-bottom:1rem;border:1px solid rgba(124,111,255,.2);}
+.rnum{font-size:3rem;font-weight:900;letter-spacing:-.04em;
+  background:linear-gradient(135deg,var(--a),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.rlbl{font-size:.8rem;color:var(--muted);margin-top:.25rem;}
 
-  /* CONNECTION CONFIG */
-  .ws-config{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
-  .ws-config input{flex:1;min-width:200px;}
+/* ── SPINNER ── */
+.spin-wrap{text-align:center;padding:2rem;}
+.spin{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--a);
+  border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 1rem;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.spin-lbl{color:var(--muted);font-size:.85rem;}
 
-  /* TOAST */
-  #toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.85rem 1.25rem;font-size:.875rem;font-weight:500;max-width:340px;display:none;z-index:999;box-shadow:0 8px 30px rgba(0,0,0,.4);}
-  #toast.show{display:block;animation:slideUp .3s ease;}
-  @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* ── TOAST ── */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--s2);
+  border:1px solid var(--border);border-radius:12px;padding:.8rem 1.1rem;
+  font-size:.83rem;font-weight:500;max-width:320px;display:none;z-index:999;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);}
+#toast.on{display:block;animation:fade .3s ease;}
 
-  /* SECTION HEADER */
-  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
-
-  @media(max-width:600px){
-    nav{padding:0 1rem;}
-    main{padding:1rem;}
-    .form-grid{grid-template-columns:1fr;}
-  }
+@media(max-width:600px){
+  nav{padding:0 1rem;} main{padding:1rem;}
+  .hero h1{font-size:1.25rem;} .fg{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -122,384 +170,264 @@
 <nav>
   <span class="logo">⚡ TeamSpace</span>
   <div class="tabs">
-    <button class="tab-btn active" id="tab-teacher" onclick="switchView('teacher')">👨‍🏫 Docente</button>
-    <button class="tab-btn" id="tab-student" onclick="switchView('student')">🎓 Alumno</button>
+    <button class="tab-btn active" id="tab-teacher" onclick="sw('teacher')">👨‍🏫 Docente</button>
+    <button class="tab-btn" id="tab-student" onclick="sw('student')">🎓 Alumno</button>
   </div>
-  <div class="ws-status">
-    <div class="ws-dot" id="ws-dot"></div>
-    <span id="ws-label" style="color:var(--muted)">Desconectado</span>
+  <div class="nav-right">
+    <div class="ws-dot" id="wdot"></div>
+    <span id="ws-lbl">Sin conexión</span>
+    <button class="gear-btn" onclick="toggleModal()" title="Configuración de red">⚙️</button>
   </div>
 </nav>
 
-<!-- MAIN -->
-<main>
-
-  <!-- ═══ CONEXIÓN GATEWAY ═══ -->
-  <div class="card" style="margin-bottom:1.25rem">
-    <div class="card-title"><span class="icon">🔌</span> Conexión al Gateway (Máquina 2)</div>
-    <div class="ws-config">
-      <div class="field" style="flex:1;min-width:200px">
-        <label>IP Máquina 2 : Puerto</label>
-        <input type="text" id="ws-url" value="ws://192.168.1.102:8080" placeholder="ws://IP_MAQUINA2:8080"/>
-      </div>
-      <button class="btn btn-primary" onclick="connectWS()" id="btn-connect">Conectar</button>
-      <button class="btn" style="background:var(--border)" onclick="disconnectWS()" id="btn-disconnect" disabled>Desconectar</button>
+<!-- MODAL CONFIG -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="toggleModal()">✕</button>
+    <h3>⚙️ Configuración de red</h3>
+    <div style="margin-bottom:1rem">
+      <label class="lbl">URL del Gateway (Máquina 2)</label>
+      <input type="text" id="ws-url" value="ws://192.168.1.102:8080" placeholder="ws://IP:8080"/>
     </div>
     <div id="alert-ws" class="alert"></div>
+    <div class="btn-row" style="margin-top:1rem">
+      <button class="btn btn-g" onclick="connectWS()" id="btn-connect">Conectar</button>
+      <button class="btn" style="background:rgba(255,255,255,.06);color:var(--muted)" onclick="disconnectWS()" id="btn-disconnect" disabled>Desconectar</button>
+    </div>
+  </div>
+</div>
+
+<main>
+
+<!-- ─── VISTA DOCENTE ─── -->
+<div class="view active" id="view-teacher">
+  <div class="hero hero-teacher">
+    <div class="orb"></div>
+    <h1>Panel del Docente</h1>
+    <p>Crea tu espacio, observa cómo se unen los alumnos en tiempo real y lanza la asignación de equipos.</p>
   </div>
 
-  <!-- ═══════════════════════════════════ -->
-  <!--  VISTA DOCENTE                      -->
-  <!-- ═══════════════════════════════════ -->
-  <div class="view active" id="view-teacher">
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">🏛️ Nuevo Espacio</div>
+    </div>
+    <div class="fg">
+      <div>
+        <label class="lbl">Código de acceso</label>
+        <input type="text" id="t-code" placeholder="Ej: MATE2025" maxlength="12"/>
+      </div>
+      <div>
+        <label class="lbl">Máx. por equipo</label>
+        <input type="number" id="t-max" value="4" min="2" max="20"/>
+      </div>
+      <div>
+        <label class="lbl">Algoritmo</label>
+        <div class="algo">
+          <input type="radio" name="algo" id="a-rand" value="RANDOM" checked/>
+          <label for="a-rand">🎲 Aleatorio</label>
+          <input type="radio" name="algo" id="a-ord" value="ORDER"/>
+          <label for="a-ord">📋 Por orden</label>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-p" id="btn-create" onclick="createSpace()" disabled>✦ Crear Espacio</button>
+    </div>
+    <div id="alert-create" class="alert"></div>
+  </div>
 
-    <!-- Crear espacio -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-title">👥 Alumnos registrados <span class="badge" id="mcnt">0</span></div>
+      <button class="btn btn-r" id="btn-assign" onclick="assignTeams()" disabled style="font-size:.8rem;padding:.5rem 1rem">⚡ Asignar</button>
+    </div>
+    <div id="t-members"><span style="color:var(--muted);font-size:.82rem">Los alumnos aparecerán aquí en tiempo real…</span></div>
+  </div>
+
+  <div class="card" id="t-teams-card" style="display:none">
+    <div class="card-title" style="margin-bottom:0">🏆 Equipos formados</div>
+    <div class="tg" id="t-teams-grid"></div>
+  </div>
+</div>
+
+<!-- ─── VISTA ALUMNO ─── -->
+<div class="view" id="view-student">
+  <div class="hero hero-student">
+    <div class="orb"></div>
+    <h1>Registro de Alumno</h1>
+    <p>Ingresa el código que te dio tu docente y espera a que se formen los equipos.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">🎓 Unirse al espacio</div></div>
+    <div class="fg">
+      <div>
+        <label class="lbl">Código del espacio</label>
+        <input type="text" id="s-code" placeholder="Código del docente" maxlength="12"/>
+      </div>
+      <div>
+        <label class="lbl">Tu matrícula / nombre</label>
+        <input type="text" id="s-id" placeholder="Ej: 20210345" maxlength="40"/>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-p" id="btn-join" onclick="joinSpace()" disabled>→ Registrarme</button>
+    </div>
+    <div id="alert-join" class="alert"></div>
+  </div>
+
+  <div class="card" id="s-waiting" style="display:none">
+    <div class="spin-wrap">
+      <div class="spin"></div>
+      <p class="spin-lbl">¡Registrado! Esperando que el docente asigne los equipos…</p>
+    </div>
+  </div>
+
+  <div class="result-wrap" id="s-result">
     <div class="card">
-      <div class="card-title"><span class="icon">🏛️</span> Crear Espacio</div>
-      <div class="form-grid">
-        <div class="field">
-          <label>Código de Acceso</label>
-          <input type="text" id="t-space-code" placeholder="Ej: MATE2025" maxlength="12"/>
-        </div>
-        <div class="field">
-          <label>Máx. por Equipo</label>
-          <input type="number" id="t-max-team" value="4" min="2" max="20"/>
-        </div>
-        <div class="field">
-          <label>Algoritmo</label>
-          <div class="algo-pill">
-            <input type="radio" name="algo" id="algo-random" value="RANDOM" checked/>
-            <label for="algo-random">🎲 Aleatorio</label>
-            <input type="radio" name="algo" id="algo-order" value="ORDER"/>
-            <label for="algo-order">📋 Por Orden</label>
-          </div>
-        </div>
+      <div class="rbanner">
+        <div class="rnum" id="s-tnum">—</div>
+        <div class="rlbl">Tu equipo asignado</div>
       </div>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="btn-create" onclick="createSpace()" disabled>Crear Espacio</button>
-      </div>
-      <div id="alert-create" class="alert"></div>
+      <div class="tg" id="s-tmembers" style="grid-template-columns:1fr"></div>
     </div>
-
-    <!-- Alumnos registrados -->
-    <div class="card">
-      <div class="section-header">
-        <div class="card-title" style="margin:0"><span class="icon">👥</span> Alumnos Registrados <span class="member-count-badge" id="member-count">0</span></div>
-        <button class="btn btn-danger" id="btn-assign" onclick="assignTeams()" disabled style="font-size:.82rem;padding:.5rem 1.1rem">⚡ Asignar Equipos</button>
-      </div>
-      <div id="teacher-members-list">
-        <span style="color:var(--muted);font-size:.85rem">Los alumnos aparecerán aquí en tiempo real…</span>
-      </div>
-    </div>
-
-    <!-- Equipos formados -->
-    <div class="card" id="teacher-teams-card" style="display:none">
-      <div class="card-title"><span class="icon">🏆</span> Equipos Asignados</div>
-      <div id="teacher-teams-grid" class="teams-grid"></div>
-    </div>
-
-  </div><!-- /view-teacher -->
-
-  <!-- ═══════════════════════════════════ -->
-  <!--  VISTA ALUMNO                       -->
-  <!-- ═══════════════════════════════════ -->
-  <div class="view" id="view-student">
-
-    <!-- Unirse a espacio -->
-    <div class="card">
-      <div class="card-title"><span class="icon">🎓</span> Unirse al Espacio</div>
-      <div class="form-grid">
-        <div class="field">
-          <label>Código de Acceso</label>
-          <input type="text" id="s-space-code" placeholder="Código del docente" maxlength="12"/>
-        </div>
-        <div class="field">
-          <label>Tu ID / Nombre</label>
-          <input type="text" id="s-student-id" placeholder="Ej: 20210345" maxlength="40"/>
-        </div>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="btn-join" onclick="joinSpace()" disabled>Registrarme</button>
-      </div>
-      <div id="alert-join" class="alert"></div>
-    </div>
-
-    <!-- Estado de espera -->
-    <div class="card" id="student-waiting" style="display:none">
-      <div class="spinner"></div>
-      <p class="waiting-msg">Registrado correctamente. Esperando que el docente asigne los equipos…</p>
-    </div>
-
-    <!-- Resultado: mi equipo -->
-    <div class="card" id="student-result">
-      <div class="card-title"><span class="icon">🏆</span> ¡Tu equipo fue asignado!</div>
-      <div class="result-banner">
-        <div class="result-team-num" id="s-team-num">—</div>
-        <div class="result-label">Tu número de equipo</div>
-      </div>
-      <div id="s-team-members" class="teams-grid" style="grid-template-columns:1fr"></div>
-    </div>
-
-  </div><!-- /view-student -->
+  </div>
+</div>
 
 </main>
-
-<!-- TOAST -->
 <div id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════
-//  ESTADO GLOBAL
-// ═══════════════════════════════════════════════════
-let ws         = null;
-let mySpaceCode = null;   // Espacio activo (docente o alumno)
-let myStudentId = null;   // ID del alumno actual
-let memberSet   = new Set(); // Para evitar chips duplicados
+let ws=null,myCode=null,myId=null,mset=new Set();
 
-// ═══════════════════════════════════════════════════
-//  TABS
-// ═══════════════════════════════════════════════════
-function switchView(view){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('view-'+view).classList.add('active');
-  document.getElementById('tab-'+view).classList.add('active');
+function sw(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('tab-'+v).classList.add('active');
 }
 
-// ═══════════════════════════════════════════════════
-//  WEBSOCKET
-// ═══════════════════════════════════════════════════
+function toggleModal(){
+  document.getElementById('modal').classList.toggle('open');
+}
+
+// ── WS ──
 function connectWS(){
-  const url = document.getElementById('ws-url').value.trim();
-  if(!url){ return showAlert('alert-ws','Ingresa la URL del Gateway.','error'); }
-
-  setWSDot('connecting');
-  try{ ws = new WebSocket(url); }
-  catch(e){ return showAlert('alert-ws','URL inválida: '+e.message,'error'); }
-
-  ws.onopen = ()=>{
-    setWSDot('connected');
-    showAlert('alert-ws','Conectado al Gateway exitosamente.','success');
-    document.getElementById('btn-connect').disabled    = true;
-    document.getElementById('btn-disconnect').disabled = false;
-    document.getElementById('btn-create').disabled     = false;
-    document.getElementById('btn-join').disabled       = false;
-    toast('✅ Conexión WebSocket establecida');
+  const url=document.getElementById('ws-url').value.trim();
+  if(!url)return al('alert-ws','Ingresa la URL.','er');
+  dot('…');
+  try{ws=new WebSocket(url);}catch(e){return al('alert-ws','URL inválida.','er');}
+  ws.onopen=()=>{
+    dot('on');al('alert-ws','Conectado al gateway.','ok');
+    setBtn(true);toast('✅ Conectado al gateway');
+    setTimeout(()=>document.getElementById('modal').classList.remove('open'),800);
   };
-
-  ws.onclose = ()=>{
-    setWSDot('');
-    document.getElementById('btn-connect').disabled    = false;
-    document.getElementById('btn-disconnect').disabled = true;
-    document.getElementById('btn-create').disabled     = true;
-    document.getElementById('btn-join').disabled       = true;
-    document.getElementById('btn-assign').disabled     = true;
-    showAlert('alert-ws','Conexión cerrada.','error');
-  };
-
-  ws.onerror = ()=>{ setWSDot('error'); showAlert('alert-ws','Error de conexión.','error'); };
-
-  ws.onmessage = (evt)=>{ handleMessage(JSON.parse(evt.data)); };
+  ws.onclose=()=>{dot('');setBtn(false);al('alert-ws','Conexión cerrada.','er');};
+  ws.onerror=()=>{dot('err');al('alert-ws','Error de conexión.','er');};
+  ws.onmessage=e=>handle(JSON.parse(e.data));
 }
-
-function disconnectWS(){
-  if(ws) ws.close();
+function disconnectWS(){if(ws)ws.close();}
+function dot(s){
+  const d=document.getElementById('wdot'),l=document.getElementById('ws-lbl');
+  d.className='ws-dot'+(s&&s!=='…'?' '+s:'');
+  l.textContent=s==='on'?'Conectado':s==='…'?'Conectando…':s==='err'?'Error':'Sin conexión';
 }
-
-function setWSDot(state){
-  const dot   = document.getElementById('ws-dot');
-  const label = document.getElementById('ws-label');
-  dot.className = 'ws-dot' + (state ? ' '+state : '');
-  label.textContent = state === 'connected' ? 'Conectado'
-                    : state === 'connecting' ? 'Conectando…'
-                    : state === 'error' ? 'Error'
-                    : 'Desconectado';
+function setBtn(c){
+  ['btn-connect','btn-create','btn-join'].forEach(id=>document.getElementById(id).disabled=c);
+  document.getElementById('btn-disconnect').disabled=!c;
+  if(!c)document.getElementById('btn-assign').disabled=true;
 }
+function send(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o));}
 
-function send(obj){ if(ws && ws.readyState===1) ws.send(JSON.stringify(obj)); }
-
-// ═══════════════════════════════════════════════════
-//  MANEJADOR DE MENSAJES ENTRANTES
-// ═══════════════════════════════════════════════════
-function handleMessage(msg){
-  console.log('[WS ←]', msg.type, msg);
-
-  switch(msg.type){
-
-    case 'CONNECTED':
-      break;
-
+// ── MESSAGES ──
+function handle(m){
+  switch(m.type){
     case 'CREATE_SPACE_RESULT':
-      if(msg.success){
-        mySpaceCode = msg.space_code;
-        showAlert('alert-create',`Espacio "${msg.space_code}" creado. ¡Comparte el código con tus alumnos!`,'success');
-        document.getElementById('btn-assign').disabled = false;
-        toast(`🏛️ Espacio ${msg.space_code} activo`);
-      } else {
-        showAlert('alert-create', msg.message, 'error');
-      }
-      break;
-
+      if(m.success){myCode=m.space_code;al('alert-create',`Espacio "${m.space_code}" creado. Comparte el código.`,'ok');
+        document.getElementById('btn-assign').disabled=false;toast('🏛️ Espacio activo: '+m.space_code);}
+      else al('alert-create',m.message,'er');break;
     case 'STUDENT_JOINED':
-      // Actualizar lista de alumnos (vista docente)
-      addMemberChip(msg.student);
-      document.getElementById('member-count').textContent = msg.member_count;
-      toast(`👋 ${msg.student.name} se unió`);
-      break;
-
+      addChip(m.student);document.getElementById('mcnt').textContent=m.member_count;
+      toast('👋 '+m.student.name+' se unió');break;
     case 'JOIN_SPACE_RESULT':
-      // Solo llega cuando falla (el éxito llega como STUDENT_JOINED)
-      showAlert('alert-join', msg.message, 'error');
-      break;
-
+      al('alert-join',m.message,'er');break;
     case 'TEAMS_ASSIGNED':
-      renderTeams(msg.teams, msg.algorithm);
-      toast(`⚡ ${msg.total_teams} equipos asignados (${msg.algorithm})`);
-      break;
-
-    case 'MEMBERS_LIST':
-      // No se usa activamente en este flujo, pero disponible
-      break;
-
-    case 'ERROR':
-      toast('❌ ' + msg.message, 'error');
-      break;
+      renderTeams(m.teams,m.algorithm);toast('⚡ '+m.total_teams+' equipos asignados');break;
+    case 'ERROR':toast('❌ '+m.message,'er');break;
   }
 }
 
-// ═══════════════════════════════════════════════════
-//  ACCIONES DEL DOCENTE
-// ═══════════════════════════════════════════════════
+// ── TEACHER ──
 function createSpace(){
-  const code    = document.getElementById('t-space-code').value.trim().toUpperCase();
-  const maxTeam = parseInt(document.getElementById('t-max-team').value, 10);
-  const algo    = document.querySelector('input[name="algo"]:checked').value;
-
-  if(!code)    return showAlert('alert-create','Ingresa el código de acceso.','error');
-  if(!maxTeam) return showAlert('alert-create','Ingresa el máximo de integrantes.','error');
-
-  memberSet.clear();
-  document.getElementById('teacher-members-list').innerHTML =
-    '<span style="color:var(--muted);font-size:.85rem">Esperando alumnos…</span>';
-  document.getElementById('member-count').textContent = '0';
-  document.getElementById('teacher-teams-card').style.display = 'none';
-
-  send({ type:'CREATE_SPACE', space_code:code, max_per_team:maxTeam, algorithm:algo });
+  const code=document.getElementById('t-code').value.trim().toUpperCase();
+  const max=parseInt(document.getElementById('t-max').value,10);
+  const algo=document.querySelector('input[name="algo"]:checked').value;
+  if(!code)return al('alert-create','Ingresa un código.','er');
+  if(!max)return al('alert-create','Ingresa el máximo.','er');
+  mset.clear();
+  document.getElementById('t-members').innerHTML='<span style="color:var(--muted);font-size:.82rem">Esperando alumnos…</span>';
+  document.getElementById('mcnt').textContent='0';
+  document.getElementById('t-teams-card').style.display='none';
+  send({type:'CREATE_SPACE',space_code:code,max_per_team:max,algorithm:algo});
+}
+function assignTeams(){if(!myCode)return;send({type:'ASSIGN_TEAMS',space_code:myCode});}
+function addChip(s){
+  if(mset.has(s.student_id))return;mset.add(s.student_id);
+  const l=document.getElementById('t-members');
+  if(l.querySelector('span'))l.innerHTML='';
+  const c=document.createElement('div');c.className='chip';
+  c.textContent=s.name;c.title='ID: '+s.student_id;l.appendChild(c);
 }
 
-function assignTeams(){
-  if(!mySpaceCode) return toast('❌ Crea un espacio primero.','error');
-  send({ type:'ASSIGN_TEAMS', space_code: mySpaceCode });
-}
-
-function addMemberChip(student){
-  if(memberSet.has(student.student_id)) return;
-  memberSet.add(student.student_id);
-
-  const list = document.getElementById('teacher-members-list');
-  // Limpiar mensaje de placeholder
-  if(list.querySelector('span')) list.innerHTML = '';
-
-  const chip = document.createElement('div');
-  chip.className = 'member-chip';
-  chip.textContent = student.name;
-  chip.title = `ID: ${student.student_id}`;
-  list.appendChild(chip);
-}
-
-// ═══════════════════════════════════════════════════
-//  ACCIONES DEL ALUMNO
-// ═══════════════════════════════════════════════════
+// ── STUDENT ──
 function joinSpace(){
-  const code = document.getElementById('s-space-code').value.trim().toUpperCase();
-  const id   = document.getElementById('s-student-id').value.trim();
-
-  if(!code) return showAlert('alert-join','Ingresa el código del espacio.','error');
-  if(!id)   return showAlert('alert-join','Ingresa tu ID o nombre.','error');
-
-  myStudentId = id;
-
-  send({ type:'JOIN_SPACE', space_code:code, student_id:id, student_name:id });
-
-  // Mostrar spinner de espera optimísticamente (el servidor confirmará)
-  document.getElementById('student-waiting').style.display = 'block';
-  document.getElementById('student-result').classList.remove('show');
-  showAlert('alert-join','Solicitud enviada, esperando confirmación…','success');
+  const code=document.getElementById('s-code').value.trim().toUpperCase();
+  const id=document.getElementById('s-id').value.trim();
+  if(!code)return al('alert-join','Ingresa el código.','er');
+  if(!id)return al('alert-join','Ingresa tu matrícula.','er');
+  myId=id;
+  send({type:'JOIN_SPACE',space_code:code,student_id:id,student_name:id});
+  document.getElementById('s-waiting').style.display='block';
+  document.getElementById('s-result').classList.remove('show');
+  al('alert-join','Solicitud enviada, espera la confirmación…','ok');
 }
 
-// ═══════════════════════════════════════════════════
-//  RENDERIZADO DE EQUIPOS (ambas vistas)
-// ═══════════════════════════════════════════════════
-function renderTeams(teams, algorithm){
-  // — Vista Docente —
-  const teacherGrid = document.getElementById('teacher-teams-grid');
-  teacherGrid.innerHTML = '';
-  document.getElementById('teacher-teams-card').style.display = 'block';
-
-  teams.forEach((team, i) => {
-    const card = document.createElement('div');
-    card.className = 'team-card';
-    card.style.animationDelay = (i * 0.06) + 's';
-
-    const membersHTML = team.members.map(m => `
-      <div class="team-member">
-        <div class="avatar">${(m.name||m.student_id).charAt(0).toUpperCase()}</div>
-        <span class="member-name">${m.name||m.student_id}</span>
-      </div>`).join('');
-
-    card.innerHTML = `
-      <div class="team-num">Equipo ${team.team_number} · ${team.members.length} integrante(s)</div>
-      ${membersHTML}`;
-    teacherGrid.appendChild(card);
+// ── TEAMS RENDER ──
+function renderTeams(teams){
+  const g=document.getElementById('t-teams-grid');g.innerHTML='';
+  document.getElementById('t-teams-card').style.display='block';
+  teams.forEach((t,i)=>{
+    const c=document.createElement('div');c.className='tc';c.style.animationDelay=(i*.07)+'s';
+    c.innerHTML=`<div class="tnum">Equipo ${t.team_number} · ${t.members.length} integrante(s)</div>`+
+      t.members.map(m=>`<div class="tm"><div class="av">${(m.name||m.student_id)[0].toUpperCase()}</div>
+        <span class="mn">${m.name||m.student_id}</span></div>`).join('');
+    g.appendChild(c);
   });
-
-  // — Vista Alumno (busca su equipo) —
-  if(!myStudentId) return;
-  const myTeam = teams.find(t => t.members.some(m => m.student_id === myStudentId));
-
-  document.getElementById('student-waiting').style.display = 'none';
-  const resultEl = document.getElementById('student-result');
-  resultEl.classList.add('show');
-
-  if(myTeam){
-    document.getElementById('s-team-num').textContent = `Equipo ${myTeam.team_number}`;
-
-    const membGrid = document.getElementById('s-team-members');
-    membGrid.innerHTML = '';
-    const card = document.createElement('div');
-    card.className = 'team-card';
-    const membersHTML = myTeam.members.map(m => `
-      <div class="team-member">
-        <div class="avatar">${(m.name||m.student_id).charAt(0).toUpperCase()}</div>
-        <span class="member-name">${m.name||m.student_id}${m.student_id===myStudentId?' <strong>(tú)</strong>':''}</span>
-      </div>`).join('');
-    card.innerHTML = `<div class="team-num">Compañeros de equipo</div>${membersHTML}`;
-    membGrid.appendChild(card);
-  } else {
-    document.getElementById('s-team-num').textContent = '¡Asignado!';
-    document.getElementById('s-team-members').innerHTML =
-      '<p style="color:var(--muted);text-align:center;padding:.75rem">Revisa la pantalla del docente.</p>';
+  if(!myId)return;
+  const mine=teams.find(t=>t.members.some(m=>m.student_id===myId));
+  document.getElementById('s-waiting').style.display='none';
+  document.getElementById('s-result').classList.add('show');
+  if(mine){
+    document.getElementById('s-tnum').textContent='Equipo '+mine.team_number;
+    const mg=document.getElementById('s-tmembers');mg.innerHTML='';
+    const c=document.createElement('div');c.className='tc';
+    c.innerHTML=`<div class="tnum">Compañeros de equipo</div>`+
+      mine.members.map(m=>`<div class="tm"><div class="av">${(m.name||m.student_id)[0].toUpperCase()}</div>
+        <span class="mn">${m.name||m.student_id}${m.student_id===myId?' <b style="color:var(--a3)">(tú)</b>':''}</span></div>`).join('');
+    mg.appendChild(c);
   }
 }
 
-// ═══════════════════════════════════════════════════
-//  UTILIDADES UI
-// ═══════════════════════════════════════════════════
-function showAlert(id, msg, type){
-  const el = document.getElementById(id);
-  el.className = 'alert show alert-'+(type==='error'?'error':'success');
-  el.textContent = msg;
-  setTimeout(()=> el.classList.remove('show'), 5000);
+// ── UI UTILS ──
+function al(id,msg,cls){
+  const e=document.getElementById(id);
+  e.className='alert show '+cls;e.textContent=msg;
+  setTimeout(()=>e.classList.remove('show'),5000);
 }
-
-let toastTimer;
-function toast(msg, type){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.borderColor = type==='error' ? 'rgba(255,101,132,.4)' : 'var(--border)';
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('show'), 3200);
+let tt;
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.className='on';clearTimeout(tt);tt=setTimeout(()=>t.className='',3200);
 }
 </script>
 </body>
