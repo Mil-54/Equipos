@@ -216,7 +216,7 @@ select option{background:var(--s2);}
       </div>
       <div id="gate-alert" class="gate-alert-txt">Credenciales incorrectas. Inténtalo de nuevo.</div>
       <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:.5rem" onclick="gateLogin()">🔓 Ingresar</button>
-      <div class="gate-hint">¿Eres alumno? Usa la pestaña <strong>Alumno</strong> arriba.</div>
+      <button onclick="closeGate()" style="width:100%;margin-top:.6rem;background:none;border:none;color:var(--muted);font-size:.8rem;cursor:pointer;padding:.4rem;border-radius:8px;transition:color .2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">← Soy alumno, volver</button>
     </div>
 
     <!-- MODO SETUP (primera vez) -->
@@ -243,6 +243,7 @@ select option{background:var(--s2);}
       </div>
       <div id="setup-alert" class="gate-alert-txt"></div>
       <button class="btn btn-g" style="width:100%;justify-content:center;margin-top:.5rem" onclick="gateSetup()">✓ Guardar credenciales</button>
+      <button onclick="closeGate()" style="width:100%;margin-top:.6rem;background:none;border:none;color:var(--muted);font-size:.8rem;cursor:pointer;padding:.4rem;border-radius:8px;transition:color .2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">← Soy alumno, volver</button>
     </div>
 
   </div>
@@ -420,6 +421,14 @@ function getCreds(){return JSON.parse(localStorage.getItem('ts_creds')||'null');
 function saveCreds(u,p){localStorage.setItem('ts_creds',JSON.stringify({u,p}));}
 
 // ── TEACHER GATE ──
+function closeGate(){
+  document.getElementById('teacher-gate').classList.add('hidden');
+  // Asegurarse de que la vista activa sea la del alumno
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-student').classList.add('active');
+  document.getElementById('tab-student').classList.add('active');
+}
 function openGate(){
   const creds=getCreds();
   document.getElementById('gate-login-mode').style.display=creds?'block':'none';
