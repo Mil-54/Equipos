@@ -162,16 +162,98 @@ select option{background:var(--s2);}
   nav{padding:0 1rem;} main{padding:1rem;}
   .hero h1{font-size:1.25rem;} .fg{grid-template-columns:1fr;}
 }
+
+/* ── TEACHER LOGIN GATE ── */
+#teacher-gate{position:fixed;inset:0;z-index:300;
+  background:rgba(7,9,15,.96);backdrop-filter:blur(18px);
+  display:flex;align-items:center;justify-content:center;
+  animation:fade .3s ease;}
+#teacher-gate.hidden{display:none;}
+.gate-card{background:var(--s1);border:1px solid rgba(124,111,255,.3);
+  border-radius:24px;padding:2.5rem 2rem;width:340px;text-align:center;
+  box-shadow:0 24px 80px rgba(124,111,255,.18);}
+.gate-icon{font-size:2.8rem;margin-bottom:.75rem;}
+.gate-card h2{font-size:1.15rem;font-weight:800;margin-bottom:.3rem;
+  background:linear-gradient(135deg,var(--a),var(--a2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.gate-card p{color:var(--muted);font-size:.82rem;margin-bottom:1.5rem;}
+.gate-input-wrap{position:relative;margin-bottom:1.1rem;}
+.gate-input-wrap input{padding:.65rem 2.8rem .65rem .9rem;}
+.eye-btn{position:absolute;right:.7rem;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;
+  transition:color .2s;}
+.eye-btn:hover{color:var(--text);}
+#gate-alert{font-size:.8rem;color:#fb7185;min-height:1.1rem;margin-bottom:.8rem;
+  display:none;animation:fade .2s ease;}
+#gate-alert.show{display:block;}
+.gate-alert-txt{font-size:.8rem;color:#fb7185;min-height:1.1rem;margin-bottom:.8rem;
+  display:none;animation:fade .2s ease;}
+.gate-alert-txt.show{display:block;}
+.gate-hint{font-size:.72rem;color:var(--muted);margin-top:1rem;}
 </style>
 </head>
 <body>
+
+<!-- ── TEACHER LOGIN GATE ── -->
+<div id="teacher-gate" class="hidden">
+  <div class="gate-card">
+
+    <!-- MODO LOGIN -->
+    <div id="gate-login-mode">
+      <div class="gate-icon">🔐</div>
+      <h2>Acceso Docente</h2>
+      <p>Ingresa tus credenciales para administrar el espacio.</p>
+      <div style="margin-bottom:.75rem">
+        <label class="lbl" style="text-align:left;display:block">Usuario</label>
+        <input type="text" id="gate-user" placeholder="Tu usuario" maxlength="32"
+          autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('gate-pass').focus()"/>
+      </div>
+      <div class="gate-input-wrap">
+        <label class="lbl" style="text-align:left;display:block">Contraseña</label>
+        <input type="password" id="gate-pass" placeholder="••••••••" maxlength="32"
+          autocomplete="current-password" onkeydown="if(event.key==='Enter')gateLogin()"/>
+        <button class="eye-btn" id="eye-btn" onclick="toggleEye('gate-pass','eye-btn')" title="Ver">👁️</button>
+      </div>
+      <div id="gate-alert" class="gate-alert-txt">Credenciales incorrectas. Inténtalo de nuevo.</div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:.5rem" onclick="gateLogin()">🔓 Ingresar</button>
+      <div class="gate-hint">¿Eres alumno? Usa la pestaña <strong>Alumno</strong> arriba.</div>
+    </div>
+
+    <!-- MODO SETUP (primera vez) -->
+    <div id="gate-setup-mode" style="display:none">
+      <div class="gate-icon">🛡️</div>
+      <h2>Configura tus credenciales</h2>
+      <p>Primera vez que accedes. Define tu usuario y contraseña de docente.</p>
+      <div style="margin-bottom:.75rem">
+        <label class="lbl" style="text-align:left;display:block">Nuevo usuario</label>
+        <input type="text" id="setup-user" placeholder="Ej: profe_martinez" maxlength="32"
+          onkeydown="if(event.key==='Enter')document.getElementById('setup-pass').focus()"/>
+      </div>
+      <div class="gate-input-wrap" style="margin-bottom:.75rem">
+        <label class="lbl" style="text-align:left;display:block">Contraseña</label>
+        <input type="password" id="setup-pass" placeholder="Mínimo 6 caracteres" maxlength="32"
+          onkeydown="if(event.key==='Enter')document.getElementById('setup-pass2').focus()"/>
+        <button class="eye-btn" id="eye-btn2" onclick="toggleEye('setup-pass','eye-btn2')" title="Ver">👁️</button>
+      </div>
+      <div class="gate-input-wrap">
+        <label class="lbl" style="text-align:left;display:block">Confirmar contraseña</label>
+        <input type="password" id="setup-pass2" placeholder="Repite la contraseña" maxlength="32"
+          onkeydown="if(event.key==='Enter')gateSetup()"/>
+        <button class="eye-btn" id="eye-btn3" onclick="toggleEye('setup-pass2','eye-btn3')" title="Ver">👁️</button>
+      </div>
+      <div id="setup-alert" class="gate-alert-txt"></div>
+      <button class="btn btn-g" style="width:100%;justify-content:center;margin-top:.5rem" onclick="gateSetup()">✓ Guardar credenciales</button>
+    </div>
+
+  </div>
+</div>
 
 <!-- NAV -->
 <nav>
   <span class="logo">⚡ TeamSpace</span>
   <div class="tabs">
-    <button class="tab-btn active" id="tab-teacher" onclick="sw('teacher')">👨‍🏫 Docente</button>
-    <button class="tab-btn" id="tab-student" onclick="sw('student')">🎓 Alumno</button>
+    <button class="tab-btn" id="tab-teacher" onclick="sw('teacher')">👨‍🏫 Docente</button>
+    <button class="tab-btn active" id="tab-student" onclick="sw('student')">🎓 Alumno</button>
   </div>
   <div class="nav-right">
     <div class="ws-dot" id="wdot"></div>
@@ -200,7 +282,7 @@ select option{background:var(--s2);}
 <main>
 
 <!-- ─── VISTA DOCENTE ─── -->
-<div class="view active" id="view-teacher">
+<div class="view" id="view-teacher">
   <div class="hero hero-teacher">
     <div class="orb"></div>
     <h1>Panel del Docente</h1>
@@ -248,10 +330,39 @@ select option{background:var(--s2);}
     <div class="card-title" style="margin-bottom:0">🏆 Equipos formados</div>
     <div class="tg" id="t-teams-grid"></div>
   </div>
+
+  <!-- Cambiar credenciales docente -->
+  <div class="card" style="margin-top:1.1rem;border-color:rgba(124,111,255,.15)">
+    <div class="card-hdr">
+      <div class="card-title" style="color:var(--muted)">🔑 Credenciales de acceso</div>
+      <button class="btn" style="background:rgba(255,255,255,.06);color:var(--muted);font-size:.78rem;padding:.4rem .9rem" onclick="openChangeCredentials()">Cambiar</button>
+    </div>
+    <div id="cred-form" style="display:none">
+      <div class="fg" style="margin-top:.75rem">
+        <div>
+          <label class="lbl">Nuevo usuario</label>
+          <input type="text" id="cred-user" placeholder="Nuevo usuario" maxlength="32"/>
+        </div>
+        <div>
+          <label class="lbl">Nueva contraseña</label>
+          <input type="password" id="cred-pass" placeholder="Mínimo 6 caracteres" maxlength="32"/>
+        </div>
+        <div>
+          <label class="lbl">Confirmar contraseña</label>
+          <input type="password" id="cred-pass2" placeholder="Repite la contraseña" maxlength="32"/>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-p" style="font-size:.82rem" onclick="saveCredentials()">✓ Guardar</button>
+        <button class="btn" style="background:rgba(255,255,255,.06);color:var(--muted);font-size:.82rem" onclick="closeChangeCredentials()">Cancelar</button>
+      </div>
+      <div id="cred-alert" class="alert"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ─── VISTA ALUMNO ─── -->
-<div class="view" id="view-student">
+<div class="view active" id="view-student">
   <div class="hero hero-student">
     <div class="orb"></div>
     <h1>Registro de Alumno</h1>
@@ -266,8 +377,12 @@ select option{background:var(--s2);}
         <input type="text" id="s-code" placeholder="Código del docente" maxlength="12"/>
       </div>
       <div>
-        <label class="lbl">Tu matrícula / nombre</label>
-        <input type="text" id="s-id" placeholder="Ej: 20210345" maxlength="40"/>
+        <label class="lbl">Tu matrícula</label>
+        <input type="text" id="s-id" placeholder="Ej: 20210345" maxlength="20"/>
+      </div>
+      <div style="grid-column:1/-1">
+        <label class="lbl">Tu nombre completo</label>
+        <input type="text" id="s-name" placeholder="Ej: María García López" maxlength="60"/>
       </div>
     </div>
     <div class="btn-row">
@@ -298,9 +413,98 @@ select option{background:var(--s2);}
 <div id="toast"></div>
 
 <script>
-let ws=null,myCode=null,myId=null,mset=new Set();
+let ws=null,myCode=null,myId=null,mset=new Set(),teacherUnlocked=false;
+
+// ── CREDENCIALES desde localStorage ──
+function getCreds(){return JSON.parse(localStorage.getItem('ts_creds')||'null');}
+function saveCreds(u,p){localStorage.setItem('ts_creds',JSON.stringify({u,p}));}
+
+// ── TEACHER GATE ──
+function openGate(){
+  const creds=getCreds();
+  document.getElementById('gate-login-mode').style.display=creds?'block':'none';
+  document.getElementById('gate-setup-mode').style.display=creds?'none':'block';
+  document.getElementById('teacher-gate').classList.remove('hidden');
+  setTimeout(()=>{
+    const f=creds?document.getElementById('gate-user'):document.getElementById('setup-user');
+    f.focus();
+  },50);
+}
+function gateLogin(){
+  const u=document.getElementById('gate-user').value.trim();
+  const p=document.getElementById('gate-pass').value;
+  const a=document.getElementById('gate-alert');
+  const creds=getCreds();
+  if(creds && u===creds.u && p===creds.p){
+    teacherUnlocked=true;
+    document.getElementById('teacher-gate').classList.add('hidden');
+    document.getElementById('gate-user').value='';
+    document.getElementById('gate-pass').value='';
+    a.classList.remove('show');
+    document.getElementById('tab-student').style.display='none';
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+    document.getElementById('view-teacher').classList.add('active');
+    document.getElementById('tab-teacher').classList.add('active');
+  } else {
+    a.classList.add('show');
+    document.getElementById('gate-pass').value='';
+    document.getElementById('gate-user').focus();
+    setTimeout(()=>a.classList.remove('show'),3000);
+  }
+}
+function gateSetup(){
+  const u=document.getElementById('setup-user').value.trim();
+  const p=document.getElementById('setup-pass').value;
+  const p2=document.getElementById('setup-pass2').value;
+  const a=document.getElementById('setup-alert');
+  if(!u){showSetupAlert(a,'Ingresa un nombre de usuario.');return;}
+  if(p.length<6){showSetupAlert(a,'La contraseña debe tener al menos 6 caracteres.');return;}
+  if(p!==p2){showSetupAlert(a,'Las contraseñas no coinciden.');return;}
+  saveCreds(u,p);
+  // Limpiar y entrar
+  ['setup-user','setup-pass','setup-pass2'].forEach(id=>document.getElementById(id).value='');
+  a.classList.remove('show');
+  teacherUnlocked=true;
+  document.getElementById('teacher-gate').classList.add('hidden');
+  document.getElementById('tab-student').style.display='none';
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-teacher').classList.add('active');
+  document.getElementById('tab-teacher').classList.add('active');
+  toast('🛡️ Credenciales configuradas. ¡Bienvenido!');
+}
+function showSetupAlert(el,msg){
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3500);
+}
+function toggleEye(inputId,btnId){
+  const inp=document.getElementById(inputId);
+  const btn=document.getElementById(btnId);
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁️';}
+}
+// Cambiar credenciales desde el panel
+function openChangeCredentials(){document.getElementById('cred-form').style.display='block';}
+function closeChangeCredentials(){document.getElementById('cred-form').style.display='none';al('cred-alert','','');}
+function saveCredentials(){
+  const u=document.getElementById('cred-user').value.trim();
+  const p=document.getElementById('cred-pass').value;
+  const p2=document.getElementById('cred-pass2').value;
+  if(!u)return al('cred-alert','Ingresa un nombre de usuario.','er');
+  if(p.length<6)return al('cred-alert','La contraseña debe tener al menos 6 caracteres.','er');
+  if(p!==p2)return al('cred-alert','Las contraseñas no coinciden.','er');
+  saveCreds(u,p);
+  ['cred-user','cred-pass','cred-pass2'].forEach(id=>document.getElementById(id).value='');
+  closeChangeCredentials();
+  toast('🔑 Credenciales actualizadas correctamente');
+}
 
 function sw(v){
+  if(v==='teacher' && !teacherUnlocked){
+    openGate();
+    return;
+  }
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
@@ -383,10 +587,12 @@ function addChip(s){
 function joinSpace(){
   const code=document.getElementById('s-code').value.trim().toUpperCase();
   const id=document.getElementById('s-id').value.trim();
-  if(!code)return al('alert-join','Ingresa el código.','er');
+  const name=document.getElementById('s-name').value.trim();
+  if(!code)return al('alert-join','Ingresa el código del espacio.','er');
   if(!id)return al('alert-join','Ingresa tu matrícula.','er');
+  if(!name)return al('alert-join','Ingresa tu nombre completo.','er');
   myId=id;
-  send({type:'JOIN_SPACE',space_code:code,student_id:id,student_name:id});
+  send({type:'JOIN_SPACE',space_code:code,student_id:id,student_name:name});
   document.getElementById('s-waiting').style.display='block';
   document.getElementById('s-result').classList.remove('show');
   al('alert-join','Solicitud enviada, espera la confirmación…','ok');
