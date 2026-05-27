@@ -238,24 +238,32 @@ async function handleJoinSpace(ws, msg) {
         // 1. Obtener configuración del espacio
         const configRes = await grpcCall(userClient, "GetSpaceConfig", { space_code: code });
         if (configRes.success) {
-          // 2. Realizar asignación estable sin alterar a los compañeros ya asignados
-          const updatedTeams = assignStableTeam(
-            code,
-            res.student,
-            configRes.config.max_per_team,
-            configRes.config.algorithm
-          );
+          // 2. Obtener la lista completa y actualizada de alumnos
+          const membersRes = await grpcCall(userClient, "GetSpaceMembers", { space_code: code });
+          if (membersRes.success && membersRes.members.length > 0) {
+            // 3. Solicitar la asignación/barajado al servicio de Matchmaking (Máquina 3)
+            const teamsRes = await grpcCall(matchClient, "AssignTeams", {
+              students:     membersRes.members,
+              max_per_team: configRes.config.max_per_team,
+              algorithm:    configRes.config.algorithm,
+            });
 
-          // 3. Difundir la asignación en tiempo real de manera reactiva e inmediata
-          broadcastToSpace(code, {
-            type:           "TEAMS_ASSIGNED",
-            space_code:     code,
-            teams:          updatedTeams,
-            total_teams:    updatedTeams.length,
-            total_students: res.member_count,
-            algorithm:      configRes.config.algorithm,
-            message:        "Equipos actualizados en tiempo real por ingreso de alumno.",
-          });
+            if (teamsRes.success) {
+              // 4. Actualizar la caché de asignación estable
+              spaceTeams.set(code, teamsRes.teams);
+
+              // 5. Broadcast del resultado en tiempo real de manera reactiva e inmediata
+              broadcastToSpace(code, {
+                type:           "TEAMS_ASSIGNED",
+                space_code:     code,
+                teams:          teamsRes.teams,
+                total_teams:    teamsRes.total_teams,
+                total_students: teamsRes.total_students,
+                algorithm:      configRes.config.algorithm,
+                message:        `Equipos actualizados automáticamente en tiempo real por ingreso de alumno con algoritmo ${configRes.config.algorithm}.`,
+              });
+            }
+          }
         }
       } catch (assignErr) {
         console.error(`[ERROR] Error en asignación automática para ${code}:`, assignErr.message);
