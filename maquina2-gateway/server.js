@@ -75,6 +75,57 @@ const spaceRooms = new Map();
 // Map<WebSocket, { role, space_code, student_id }>
 const clientMeta = new Map();
 
+// Map<space_code, Team[]> — para persistir equipos estables e incrementales en tiempo real
+const spaceTeams = new Map();
+
+/**
+ * Agrupa al alumno en un equipo de forma estable e incremental sin alterar
+ * a los compañeros ya asignados.
+ */
+function assignStableTeam(spaceCode, student, maxPerTeam, algorithm) {
+  if (!spaceTeams.has(spaceCode)) {
+    spaceTeams.set(spaceCode, []);
+  }
+  const teams = spaceTeams.get(spaceCode);
+
+  // Evitar duplicados en el equipo
+  const exists = teams.some(t => t.members.some(m => m.student_id === student.student_id));
+  if (exists) return teams;
+
+  if (algorithm === "ORDER") {
+    // ORDER: Busca el primer equipo disponible que tenga espacio
+    let placed = false;
+    for (const team of teams) {
+      if (team.members.length < maxPerTeam) {
+        team.members.push(student);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      teams.push({
+        team_number: teams.length + 1,
+        members: [student]
+      });
+    }
+  } else {
+    // RANDOM: Filtra equipos disponibles, asigna aleatoriamente a uno de ellos,
+    // garantizando que los alumnos ya asignados permanezcan estables.
+    const availableTeams = teams.filter(t => t.members.length < maxPerTeam);
+    if (availableTeams.length > 0) {
+      const randomTeam = availableTeams[Math.floor(Math.random() * availableTeams.length)];
+      randomTeam.members.push(student);
+    } else {
+      teams.push({
+        team_number: teams.length + 1,
+        members: [student]
+      });
+    }
+  }
+
+  return teams;
+}
+
 function joinRoom(ws, spaceCode) {
   if (!spaceRooms.has(spaceCode)) {
     spaceRooms.set(spaceCode, new Set());
@@ -181,6 +232,34 @@ async function handleJoinSpace(ws, msg) {
         member_count: res.member_count,
         message:      res.message,
       });
+
+      // ── Asignación Automática de Equipos en Tiempo Real ──
+      try {
+        // 1. Obtener configuración del espacio
+        const configRes = await grpcCall(userClient, "GetSpaceConfig", { space_code: code });
+        if (configRes.success) {
+          // 2. Realizar asignación estable sin alterar a los compañeros ya asignados
+          const updatedTeams = assignStableTeam(
+            code,
+            res.student,
+            configRes.config.max_per_team,
+            configRes.config.algorithm
+          );
+
+          // 3. Difundir la asignación en tiempo real de manera reactiva e inmediata
+          broadcastToSpace(code, {
+            type:           "TEAMS_ASSIGNED",
+            space_code:     code,
+            teams:          updatedTeams,
+            total_teams:    updatedTeams.length,
+            total_students: res.member_count,
+            algorithm:      configRes.config.algorithm,
+            message:        "Equipos actualizados en tiempo real por ingreso de alumno.",
+          });
+        }
+      } catch (assignErr) {
+        console.error(`[ERROR] Error en asignación automática para ${code}:`, assignErr.message);
+      }
     } else {
       // Solo responder al alumno que intentó entrar
       ws.send(JSON.stringify({
@@ -220,7 +299,7 @@ async function handleAssignTeams(ws, msg) {
       }));
     }
 
-    // 3. Llamar al servicio de Matchmaking (Máquina 3)
+    // 3. Llamar al servicio de Matchmaking (Máquina 3) para barajado/asignación completa
     const teamsRes = await grpcCall(matchClient, "AssignTeams", {
       students:     membersRes.members,
       max_per_team: configRes.config.max_per_team,
@@ -231,7 +310,10 @@ async function handleAssignTeams(ws, msg) {
       return ws.send(JSON.stringify({ type: "ERROR", message: teamsRes.message }));
     }
 
-    // 4. Broadcast del resultado a TODOS en el espacio
+    // 4. Actualizar la caché de asignación estable con la nueva distribución completa
+    spaceTeams.set(code, teamsRes.teams);
+
+    // 5. Broadcast del resultado a TODOS en el espacio
     broadcastToSpace(code, {
       type:           "TEAMS_ASSIGNED",
       space_code:     code,
