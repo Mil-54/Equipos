@@ -286,6 +286,23 @@ select option { background: var(--s2); }
   </div>
 </div>
 
+<!-- MODAL JOIN CLASS -->
+<div class="modal-bg" id="modal-join-class">
+  <div class="modal">
+    <button class="modal-close" onclick="toggleJoinClassModal()">✕</button>
+    <h3><i class="ph-bold ph-plus-circle"></i> Unirse a una clase</h3>
+    <div style="margin-bottom:1.5rem">
+      <label class="lbl">Código del espacio</label>
+      <input type="text" id="join-class-code" placeholder="Ej: MATE2025" maxlength="12" style="text-transform: uppercase;"
+        onkeydown="if(event.key==='Enter')submitJoinClass()"/>
+    </div>
+    <div id="alert-join-class" class="alert"></div>
+    <div class="btn-row" style="margin-top:1.5rem">
+      <button class="btn btn-p" onclick="submitJoinClass()" id="btn-submit-join" style="flex:1">Unirse <i class="ph-bold ph-arrow-right"></i></button>
+    </div>
+  </div>
+</div>
+
 <main>
 
 <!-- ─── VISTA DOCENTE ─── -->
@@ -372,47 +389,57 @@ select option { background: var(--s2); }
 <div class="view active" id="view-student">
   <div class="hero hero-student">
     <div class="orb"></div>
-    <h1>Registro de Alumno</h1>
-    <p>Ingresa el código proporcionado por tu docente, completa tus datos y prepárate para trabajar en equipo.</p>
+    <h1>Portal del Alumno</h1>
+    <p>Inicia sesión, únete a tus espacios de clase y visualiza tus equipos de trabajo asignados en tiempo real.</p>
   </div>
 
-  <div class="card">
-    <div class="card-hdr"><div class="card-title"><i class="ph-bold ph-user-plus"></i> Unirse al espacio</div></div>
-    <div class="fg">
-      <div>
-        <label class="lbl">Código del espacio</label>
-        <input type="text" id="s-code" placeholder="Código del docente" maxlength="12"/>
-      </div>
-      <div>
-        <label class="lbl">Tu matrícula / ID</label>
-        <input type="text" id="s-id" placeholder="Ej: 20210345" maxlength="20"/>
-      </div>
-      <div style="grid-column:1/-1">
-        <label class="lbl">Tu nombre completo</label>
-        <input type="text" id="s-name" placeholder="Ej: María García López" maxlength="60"/>
-      </div>
+  <!-- GATE DE INICIO DE SESIÓN DE ALUMNO -->
+  <div id="student-login-card" class="card" style="max-width:420px; margin: 2rem auto;">
+    <div class="card-hdr" style="justify-content:center; text-align:center; flex-direction:column; gap:0.5rem; margin-bottom:1.5rem">
+      <div class="gate-icon" style="font-size:3rem; color:var(--a2); margin:0"><i class="ph-duotone ph-student"></i></div>
+      <h2 style="font-size:1.4rem; font-weight:900; background: linear-gradient(135deg, #fff, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Acceso de Alumno</h2>
+      <p style="color:var(--muted); font-size:0.9rem;">Ingresa tus datos para acceder a tus clases y equipos.</p>
     </div>
-    <div class="btn-row">
-      <button class="btn btn-p" id="btn-join" onclick="joinSpace()" disabled>Registrarme <i class="ph-bold ph-arrow-right"></i></button>
+    <div style="margin-bottom:1.25rem">
+      <label class="lbl">Tu matrícula / ID</label>
+      <input type="text" id="login-student-id" placeholder="Ej: 20210345" maxlength="20"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-student-name').focus()"/>
     </div>
-    <div id="alert-join" class="alert"></div>
+    <div style="margin-bottom:1.25rem">
+      <label class="lbl">Tu nombre completo</label>
+      <input type="text" id="login-student-name" placeholder="Ej: María García López" maxlength="60"
+        onkeydown="if(event.key==='Enter')studentLogin()"/>
+    </div>
+    <div id="login-student-alert" class="alert"></div>
+    <button class="btn btn-p" style="width:100%; justify-content:center; margin-top:0.5rem; padding:0.9rem" onclick="studentLogin()">
+      <i class="ph-bold ph-sign-in"></i> Ingresar
+    </button>
   </div>
 
-  <div class="card" id="s-waiting" style="display:none">
-    <div class="spin-wrap">
-      <div class="spin"></div>
-      <p class="spin-lbl">¡Registro exitoso! Esperando asignación del docente…</p>
-    </div>
-  </div>
-
-  <div class="result-wrap" id="s-result">
-    <div class="card">
-      <div class="rbanner">
-        <i class="ph-duotone ph-confetti" style="position:absolute; font-size:10rem; opacity:0.05; top:50%; left:50%; transform:translate(-50%, -50%); pointer-events:none;"></i>
-        <div class="rnum" id="s-tnum">—</div>
-        <div class="rlbl">Tu equipo asignado</div>
+  <!-- CONTENIDO DE ALUMNO LOGUEADO -->
+  <div id="student-dashboard" style="display:none">
+    <!-- Fila superior de bienvenida -->
+    <div class="card" style="padding:1.25rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem">
+      <div style="display:flex; align-items:center; gap:0.8rem">
+        <div class="av" id="student-avatar" style="width:40px; height:40px; font-size:1rem; background: linear-gradient(135deg, var(--a2), #c084fc)">M</div>
+        <div>
+          <div style="font-weight:800; font-size:1.05rem;" id="student-welcome-name">María García</div>
+          <div style="font-size:0.8rem; color:var(--muted); font-weight:500;" id="student-welcome-id">Matrícula: 20210345</div>
+        </div>
       </div>
-      <div class="tg" id="s-tmembers" style="grid-template-columns:1fr"></div>
+      <div style="display:flex; gap:0.6rem">
+        <button class="btn btn-g" onclick="toggleJoinClassModal()" id="btn-open-join" disabled style="font-size:0.85rem; padding:0.6rem 1.2rem">
+          <i class="ph-bold ph-plus-circle"></i> Unirse a clase
+        </button>
+        <button class="btn" style="background:rgba(255,255,255,.05); color:var(--muted); font-size:0.85rem; padding:0.6rem 1.2rem" onclick="studentLogout()">
+          <i class="ph-bold ph-sign-out"></i> Salir
+        </button>
+      </div>
+    </div>
+
+    <!-- Lista de Clases -->
+    <div id="student-classes-container">
+      <!-- Espacios dinámicos del alumno se renderizan aquí -->
     </div>
   </div>
 </div>
@@ -422,10 +449,52 @@ select option { background: var(--s2); }
 
 <script>
 let ws=null,myCode=null,myId=null,mset=new Set(),teacherUnlocked=false;
+let myStudentInfo = null; // { id, name }
 
+// ── Gestión del Almacenamiento Local ──────────────────────────
 function getCreds(){return JSON.parse(localStorage.getItem('ts_creds')||'null');}
 function saveCreds(u,p){localStorage.setItem('ts_creds',JSON.stringify({u,p}));}
 
+function getStudent() {
+  if (!myStudentInfo) {
+    myStudentInfo = JSON.parse(localStorage.getItem('ts_student') || 'null');
+  }
+  return myStudentInfo;
+}
+function saveStudent(id, name) {
+  myStudentInfo = { id, name };
+  localStorage.setItem('ts_student', JSON.stringify(myStudentInfo));
+}
+function clearStudent() {
+  myStudentInfo = null;
+  localStorage.removeItem('ts_student');
+}
+function getStudentSpaces() {
+  return JSON.parse(localStorage.getItem('ts_student_spaces') || '{}');
+}
+function saveStudentSpaces(spacesObj) {
+  localStorage.setItem('ts_student_spaces', JSON.stringify(spacesObj));
+}
+
+// ── Inicialización ───────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Autodetectar y establecer dirección del Gateway WebSocket
+  let defaultWs = localStorage.getItem('ts_ws_url');
+  if (!defaultWs) {
+    if (window.location.protocol === 'https:') {
+      defaultWs = `wss://${window.location.host}`;
+    } else if (window.location.host) {
+      defaultWs = `ws://${window.location.host}`;
+    } else {
+      defaultWs = 'ws://localhost:8080';
+    }
+  }
+  document.getElementById('ws-url').value = defaultWs;
+  connectWS();
+  initStudentSession();
+});
+
+// ── Portal Docente Gates ──────────────────────────────────────
 function closeGate(){
   document.getElementById('teacher-gate').classList.add('hidden');
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
@@ -512,6 +581,190 @@ function saveCredentials(){
   toast('🔑 Credenciales actualizadas correctamente');
 }
 
+// ── Gestión del Portal Alumno ────────────────────────────────
+function initStudentSession() {
+  const student = getStudent();
+  const loginCard = document.getElementById('student-login-card');
+  const dashboard = document.getElementById('student-dashboard');
+  
+  if (student) {
+    loginCard.style.display = 'none';
+    dashboard.style.display = 'block';
+    
+    document.getElementById('student-welcome-name').textContent = student.name;
+    document.getElementById('student-welcome-id').textContent = `Matrícula: ${student.id}`;
+    document.getElementById('student-avatar').textContent = student.name[0].toUpperCase();
+    
+    renderStudentClasses();
+  } else {
+    loginCard.style.display = 'block';
+    dashboard.style.display = 'none';
+  }
+}
+
+function studentLogin() {
+  const idInput = document.getElementById('login-student-id');
+  const nameInput = document.getElementById('login-student-name');
+  const id = idInput.value.trim();
+  const name = nameInput.value.trim();
+  
+  if (!id) return al('login-student-alert', 'Ingresa tu matrícula / ID.', 'er');
+  if (!name) return al('login-student-alert', 'Ingresa tu nombre completo.', 'er');
+  
+  saveStudent(id, name);
+  idInput.value = '';
+  nameInput.value = '';
+  
+  initStudentSession();
+  
+  if (ws && ws.readyState === 1) {
+    rejoinAllSpaces();
+  }
+  toast('👋 Sesión iniciada correctamente');
+}
+
+function studentLogout() {
+  clearStudent();
+  localStorage.removeItem('ts_student_spaces');
+  initStudentSession();
+  toast('ℹ️ Sesión de alumno cerrada');
+}
+
+function toggleJoinClassModal() {
+  document.getElementById('modal-join-class').classList.toggle('open');
+  if (document.getElementById('modal-join-class').classList.contains('open')) {
+    setTimeout(() => document.getElementById('join-class-code').focus(), 10);
+  }
+}
+
+function submitJoinClass() {
+  const codeInput = document.getElementById('join-class-code');
+  const code = codeInput.value.trim().toUpperCase();
+  if (!code) return al('alert-join-class', 'Ingresa el código de la clase.', 'er');
+  
+  const student = getStudent();
+  if (!student) return;
+  
+  send({
+    type: 'JOIN_SPACE',
+    space_code: code,
+    student_id: student.id,
+    student_name: student.name
+  });
+  
+  al('alert-join-class', 'Enviando solicitud...', 'ok');
+}
+
+function leaveClass(code) {
+  const spaces = getStudentSpaces();
+  delete spaces[code];
+  saveStudentSpaces(spaces);
+  renderStudentClasses();
+  toast(`🚪 Has salido de la clase: ${code}`);
+}
+
+function rejoinAllSpaces() {
+  const student = getStudent();
+  if (!student) return;
+  const spaces = getStudentSpaces();
+  for (const code in spaces) {
+    send({
+      type: 'JOIN_SPACE',
+      space_code: code,
+      student_id: student.id,
+      student_name: student.name
+    });
+  }
+}
+
+function renderStudentClasses() {
+  const container = document.getElementById('student-classes-container');
+  const spaces = getStudentSpaces();
+  const student = getStudent();
+  const keys = Object.keys(spaces);
+  
+  if (keys.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align:center; padding:3rem 1.5rem; color:var(--muted)">
+        <i class="ph-duotone ph-book-open" style="font-size:4rem; color:var(--a2); margin-bottom:1rem; opacity:0.8;"></i>
+        <h3 style="color:var(--text); font-weight:700; margin-bottom:0.5rem">Aún no estás en ninguna clase</h3>
+        <p style="font-size:0.9rem; max-width:400px; margin:0 auto 1.5rem">
+          Pídele el código de acceso a tu docente y únete para ver tu asignación de equipos en tiempo real.
+        </p>
+        <button class="btn btn-p" onclick="toggleJoinClassModal()"><i class="ph-bold ph-plus-circle"></i> Unirse a clase</button>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = '';
+  keys.forEach(code => {
+    const space = spaces[code];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginTop = '1.5rem';
+    
+    let badgeText = 'Esperando asignación';
+    let badgeClass = 'background:rgba(255,255,255,0.05); color:var(--muted); border:1px solid var(--border);';
+    
+    if (space.status === 'assigned') {
+      badgeText = 'Equipo Asignado';
+      badgeClass = 'background:rgba(20,184,166,0.1); color:#34d399; border:1px solid rgba(20,184,166,0.3);';
+    }
+    
+    let bodyHtml = '';
+    if (space.status === 'assigned') {
+      bodyHtml = `
+        <div class="class-card-body">
+          <div class="rbanner" style="padding: 2rem; margin-bottom: 1rem; border-color: rgba(139,92,246,0.2);">
+            <div class="rnum" style="font-size: 2.5rem;">Equipo ${space.team_number}</div>
+            <div class="rlbl" style="font-size: 0.85rem;">Tu equipo asignado</div>
+          </div>
+          <div class="tg" style="grid-template-columns:1fr">
+            <div class="tc" style="background: rgba(255,255,255,0.02); padding: 1.25rem;">
+              <div class="tnum">Tus Compañeros</div>
+              ${space.members.map(m => `
+                <div class="tm">
+                  <div class="av">${(m.name || m.student_id)[0].toUpperCase()}</div>
+                  <span class="mn">${m.name || m.student_id} ${m.student_id === student.id ? '<b style="color:var(--a3)">(tú)</b>' : ''}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      bodyHtml = `
+        <div class="class-card-body">
+          <div class="spin-wrap" style="padding: 2.5rem; background: rgba(0,0,0,0.05); border: 1px dashed var(--border); margin-top:0;">
+            <div class="spin" style="width:32px; height:32px; border-width:3px"></div>
+            <p class="spin-lbl" style="font-size:0.85rem;">Registrado correctamente. Esperando asignación del docente…</p>
+          </div>
+        </div>
+      `;
+    }
+    
+    card.innerHTML = `
+      <div class="card-hdr" style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+        <div class="card-title">
+          <i class="ph-bold ph-book-bookmark" style="color:var(--a2)"></i> Clase: ${code}
+        </div>
+        <div style="display:flex; align-items:center; gap:0.8rem">
+          <span class="badge" style="${badgeClass} font-size:0.75rem; text-transform:uppercase;">
+            ${badgeText}
+          </span>
+          <button class="gear-btn" onclick="leaveClass('${code}')" title="Abandonar clase" style="width:32px; height:32px; font-size:0.9rem; border-color:rgba(239,68,68,0.2); color:#fb7185">
+            <i class="ph-bold ph-trash"></i>
+          </button>
+        </div>
+      </div>
+      ${bodyHtml}
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ── Navegación y Vistas ──────────────────────────────────────
 function sw(v){
   if(v==='teacher' && !teacherUnlocked){
     openGate();
@@ -529,6 +782,7 @@ function toggleModal(){
   document.getElementById('modal').classList.toggle('open');
 }
 
+// ── WebSocket ────────────────────────────────────────────────
 function connectWS(){
   const url=document.getElementById('ws-url').value.trim();
   if(!url)return al('alert-ws','Ingresa la URL.','er');
@@ -536,8 +790,10 @@ function connectWS(){
   try{ws=new WebSocket(url);}catch(e){return al('alert-ws','URL inválida.','er');}
   ws.onopen=()=>{
     dot('on');al('alert-ws','Conectado al gateway.','ok');
+    localStorage.setItem('ts_ws_url', url);
     setBtn(true);toast('✅ Conectado al Gateway');
     setTimeout(()=>document.getElementById('modal').classList.remove('open'),800);
+    rejoinAllSpaces();
   };
   ws.onclose=()=>{dot('');setBtn(false);al('alert-ws','Conexión cerrada.','er');};
   ws.onerror=()=>{dot('err');al('alert-ws','Error de conexión.','er');};
@@ -550,7 +806,10 @@ function dot(s){
   l.textContent=s==='on'?'Conectado':s==='…'?'Conectando…':s==='err'?'Error':'Sin conexión';
 }
 function setBtn(c){
-  ['btn-connect','btn-create','btn-join'].forEach(id=>document.getElementById(id).disabled=c);
+  document.getElementById('btn-connect').disabled=c;
+  document.getElementById('btn-create').disabled=!c;
+  const btnOpenJoin = document.getElementById('btn-open-join');
+  if (btnOpenJoin) btnOpenJoin.disabled = !c;
   document.getElementById('btn-disconnect').disabled=!c;
   if(!c)document.getElementById('btn-assign').disabled=true;
 }
@@ -562,13 +821,53 @@ function handle(m){
       if(m.success){myCode=m.space_code;al('alert-create',`Espacio "${m.space_code}" creado. Comparte el código con tus alumnos.`,'ok');
         document.getElementById('btn-assign').disabled=false;toast('🏛️ Espacio activo: '+m.space_code);}
       else al('alert-create',m.message,'er');break;
+      
     case 'STUDENT_JOINED':
-      addChip(m.student);document.getElementById('mcnt').textContent=m.member_count;
-      toast('👋 '+m.student.name+' se unió');break;
+      if (teacherUnlocked && myCode === m.space_code) {
+        addChip(m.student);document.getElementById('mcnt').textContent=m.member_count;
+      }
+      toast('👋 '+m.student.name+' se unió a '+m.space_code);break;
+      
     case 'JOIN_SPACE_RESULT':
-      al('alert-join',m.message,'er');break;
+      if (m.success) {
+        const spaces = getStudentSpaces();
+        spaces[m.space_code] = {
+          space_code: m.space_code,
+          status: 'waiting',
+          team_number: null,
+          members: []
+        };
+        saveStudentSpaces(spaces);
+        renderStudentClasses();
+        toast(`✅ Unido con éxito a la clase: ${m.space_code}`);
+        
+        document.getElementById('modal-join-class').classList.remove('open');
+        document.getElementById('join-class-code').value = '';
+        al('alert-join-class', '', '');
+      } else {
+        al('alert-join-class', m.message, 'er');
+      }
+      break;
+      
     case 'TEAMS_ASSIGNED':
-      renderTeams(m.teams,m.algorithm);toast('⚡ '+m.total_teams+' equipos asignados');break;
+      if (teacherUnlocked && myCode === m.space_code) {
+        renderTeams(m.teams);
+      }
+      
+      const student = getStudent();
+      const spaces = getStudentSpaces();
+      if (student && spaces[m.space_code]) {
+        const mine = m.teams.find(t=>t.members.some(m=>m.student_id===student.id));
+        if (mine) {
+          spaces[m.space_code].status = 'assigned';
+          spaces[m.space_code].team_number = mine.team_number;
+          spaces[m.space_code].members = mine.members;
+          saveStudentSpaces(spaces);
+          renderStudentClasses();
+        }
+      }
+      toast('⚡ '+m.total_teams+' equipos asignados en '+m.space_code);break;
+      
     case 'ERROR':toast('❌ '+m.message,'er');break;
   }
 }
@@ -592,24 +891,9 @@ function addChip(s){
   if(l.querySelector('span'))l.innerHTML='';
   const c=document.createElement('div');c.className='chip';
   c.textContent=s.name;c.title='ID: '+s.student_id;
-  // Delay calculation for staggered effect based on current children count
   const delay = (l.children.length * 0.05).toFixed(2);
   c.style.animationDelay = delay + 's';
   l.appendChild(c);
-}
-
-function joinSpace(){
-  const code=document.getElementById('s-code').value.trim().toUpperCase();
-  const id=document.getElementById('s-id').value.trim();
-  const name=document.getElementById('s-name').value.trim();
-  if(!code)return al('alert-join','Ingresa el código del espacio.','er');
-  if(!id)return al('alert-join','Ingresa tu matrícula.','er');
-  if(!name)return al('alert-join','Ingresa tu nombre completo.','er');
-  myId=id;
-  send({type:'JOIN_SPACE',space_code:code,student_id:id,student_name:name});
-  document.getElementById('s-waiting').style.display='block';
-  document.getElementById('s-result').classList.remove('show');
-  al('alert-join','Solicitud enviada, espera la confirmación…','ok');
 }
 
 function renderTeams(teams){
@@ -622,24 +906,10 @@ function renderTeams(teams){
         <span class="mn">${m.name||m.student_id}</span></div>`).join('');
     g.appendChild(c);
   });
-  if(!myId)return;
-  const mine=teams.find(t=>t.members.some(m=>m.student_id===myId));
-  document.getElementById('s-waiting').style.display='none';
-  document.getElementById('s-result').classList.add('show');
-  if(mine){
-    document.getElementById('s-tnum').textContent='Equipo '+mine.team_number;
-    const mg=document.getElementById('s-tmembers');mg.innerHTML='';
-    const c=document.createElement('div');c.className='tc';
-    c.innerHTML=`<div class="tnum">Tus Compañeros</div>`+
-      mine.members.map(m=>`<div class="tm"><div class="av">${(m.name||m.student_id)[0].toUpperCase()}</div>
-        <span class="mn">${m.name||m.student_id}${m.student_id===myId?' <b style="color:var(--a3)">(tú)</b>':''}</span></div>`).join('');
-    mg.appendChild(c);
-  }
 }
 
 function al(id,msg,cls){
   const e=document.getElementById(id);
-  // Reset animation
   e.classList.remove('show');
   void e.offsetWidth; // trigger reflow
   e.className='alert show '+cls;e.textContent=msg;
@@ -648,8 +918,7 @@ function al(id,msg,cls){
 let tt;
 function toast(msg){
   const t=document.getElementById('toast');
-  t.innerHTML = msg; // Permite usar html básico si se requiere
-  // Reset animation
+  t.innerHTML = msg;
   t.classList.remove('on');
   void t.offsetWidth;
   t.classList.add('on');

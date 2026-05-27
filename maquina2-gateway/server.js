@@ -20,6 +20,7 @@
 
 const path     = require("path");
 const http     = require("http");
+const fs       = require("fs");
 const WebSocket = require("ws");
 const grpc     = require("@grpc/grpc-js");
 const loader   = require("@grpc/proto-loader");
@@ -82,10 +83,11 @@ function joinRoom(ws, spaceCode) {
 }
 
 function leaveRoom(ws) {
-  const meta = clientMeta.get(ws);
-  if (meta && meta.space_code) {
-    const room = spaceRooms.get(meta.space_code);
-    if (room) room.delete(ws);
+  for (const [spaceCode, room] of spaceRooms.entries()) {
+    room.delete(ws);
+    if (room.size === 0) {
+      spaceRooms.delete(spaceCode);
+    }
   }
 }
 
@@ -162,9 +164,19 @@ async function handleJoinSpace(ws, msg) {
       });
       joinRoom(ws, code);
 
+      // Responder al alumno que se unió con éxito
+      ws.send(JSON.stringify({
+        type:       "JOIN_SPACE_RESULT",
+        success:    true,
+        space_code: code,
+        student:    res.student,
+        message:    res.message,
+      }));
+
       // Notificar a TODOS en el espacio (incluido el docente) del nuevo alumno
       broadcastToSpace(code, {
         type:         "STUDENT_JOINED",
+        space_code:   code,
         student:      res.student,
         member_count: res.member_count,
         message:      res.message,
@@ -172,9 +184,10 @@ async function handleJoinSpace(ws, msg) {
     } else {
       // Solo responder al alumno que intentó entrar
       ws.send(JSON.stringify({
-        type:    "JOIN_SPACE_RESULT",
-        success: false,
-        message: res.message,
+        type:       "JOIN_SPACE_RESULT",
+        success:    false,
+        space_code: msg.space_code.trim().toUpperCase(),
+        message:    res.message,
       }));
     }
 
@@ -221,6 +234,7 @@ async function handleAssignTeams(ws, msg) {
     // 4. Broadcast del resultado a TODOS en el espacio
     broadcastToSpace(code, {
       type:           "TEAMS_ASSIGNED",
+      space_code:     code,
       teams:          teamsRes.teams,
       total_teams:    teamsRes.total_teams,
       total_students: teamsRes.total_students,
@@ -244,10 +258,11 @@ async function handleGetMembers(ws, msg) {
     const res  = await grpcCall(userClient, "GetSpaceMembers", { space_code: code });
 
     ws.send(JSON.stringify({
-      type:    "MEMBERS_LIST",
-      success: res.success,
-      members: res.members,
-      message: res.message,
+      type:       "MEMBERS_LIST",
+      space_code: code,
+      success:    res.success,
+      members:    res.members,
+      message:    res.message,
     }));
   } catch (err) {
     ws.send(JSON.stringify({ type: "ERROR", message: err.message }));
@@ -277,9 +292,23 @@ async function routeMessage(ws, raw) {
 
 // ── Servidor HTTP + WebSocket ────────────────────────────────
 const httpServer = http.createServer((req, res) => {
-  // Health-check HTTP simple
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("Gateway WebSocket activo. Conéctate via ws://");
+  // Servir frontend/index.html
+  const urlPath = req.url.split('?')[0];
+  if (urlPath === "/" || urlPath === "/index.html") {
+    const htmlPath = path.join(__dirname, "..", "frontend", "index.html");
+    fs.readFile(htmlPath, "utf8", (err, content) => {
+      if (err) {
+        res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Error al cargar la aplicación frontend: " + err.message);
+      } else {
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.end(content);
+      }
+    });
+  } else {
+    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("No encontrado.");
+  }
 });
 
 const wss = new WebSocket.Server({ server: httpServer });
