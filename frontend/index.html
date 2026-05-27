@@ -222,14 +222,19 @@ select option { background: var(--s2); }
       </div>
       <div id="gate-alert" class="gate-alert-txt">Credenciales incorrectas. Inténtalo de nuevo.</div>
       <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:0.5rem;padding:0.9rem" onclick="gateLogin()"><i class="ph-bold ph-sign-in"></i> Ingresar al Panel</button>
+      
+      <button class="back-btn" onclick="openSetupMode()" style="margin-top:0.75rem; color:var(--a2); font-weight:700; width:100%; display:flex; justify-content:center; gap:0.4rem; border:1px dashed rgba(139,92,246,0.3); padding:0.6rem; border-radius:8px; background:rgba(139,92,246,0.03)">
+        <i class="ph-bold ph-user-plus"></i> Registrar nuevo docente
+      </button>
+
       <button class="back-btn" onclick="closeGate()">← Soy alumno, volver</button>
     </div>
 
-    <!-- MODO SETUP (primera vez) -->
+    <!-- MODO SETUP (primera vez / registro nuevo) -->
     <div id="gate-setup-mode" style="display:none">
       <div class="gate-icon"><i class="ph-duotone ph-shield-check"></i></div>
       <h2>Configura tus credenciales</h2>
-      <p>Primera vez que accedes. Define tu usuario y contraseña de docente.</p>
+      <p>Define tu usuario y contraseña de docente para administrar clases.</p>
       <div style="margin-bottom:1.25rem">
         <label class="lbl" style="text-align:left;display:block">Nuevo usuario</label>
         <input type="text" id="setup-user" placeholder="Ej: profe_martinez" maxlength="32"
@@ -249,6 +254,11 @@ select option { background: var(--s2); }
       </div>
       <div id="setup-alert" class="gate-alert-txt"></div>
       <button class="btn btn-g" style="width:100%;justify-content:center;margin-top:0.5rem;padding:0.9rem" onclick="gateSetup()"><i class="ph-bold ph-check"></i> Guardar y Continuar</button>
+      
+      <button class="back-btn" onclick="openLoginMode()" style="margin-top:0.75rem; color:var(--a3); font-weight:700; width:100%; display:flex; justify-content:center; gap:0.4rem; border:1px dashed rgba(20,184,166,0.3); padding:0.6rem; border-radius:8px; background:rgba(20,184,166,0.03)">
+        ← Volver al inicio de sesión
+      </button>
+
       <button class="back-btn" onclick="closeGate()">← Soy alumno, volver</button>
     </div>
 
@@ -511,6 +521,21 @@ function openGate(){
     const f=creds?document.getElementById('gate-user'):document.getElementById('setup-user');
     if(f) f.focus();
   },10);
+}
+function openSetupMode(){
+  document.getElementById('gate-login-mode').style.display='none';
+  document.getElementById('gate-setup-mode').style.display='block';
+  setTimeout(()=>document.getElementById('setup-user').focus(),10);
+}
+function openLoginMode(){
+  const creds=getCreds();
+  if(!creds){
+    toast('⚠️ No hay ningún docente registrado aún. Por favor crea uno primero.');
+    return;
+  }
+  document.getElementById('gate-login-mode').style.display='block';
+  document.getElementById('gate-setup-mode').style.display='none';
+  setTimeout(()=>document.getElementById('gate-user').focus(),10);
 }
 function gateLogin(){
   const u=document.getElementById('gate-user').value.trim();
